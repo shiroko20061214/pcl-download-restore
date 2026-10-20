@@ -15,7 +15,7 @@
 PCL-Download-Restore.bat -PclDir "D:\PCL2"
 
 :: GitHub 连不上时（任何镜像都安全，见下文哈希校验）
-PCL-Download-Restore.bat -Proxy "https://ghfast.top/"
+PCL-Download-Restore.bat -Proxy "https://hk.gh-proxy.com/"
 
 :: 撤销，回到你原来的版本
 PCL-Download-Restore.bat -Restore
@@ -112,6 +112,19 @@ patches/Release 2.14.0.0 b0756ee600d34b93dc841e0f2ca00096.patch
 补丁文件名由「构建类型 + 版本 + 源 exe 的 MD5」拼成。我们的 MD5 与它逐字吻合，说明拿到的就是官方更新器认可的那份构建。
 
 **因此脚本可以放心支持第三方加速前缀**——镜像被投毒也过不了哈希校验。
+#### 下载源的实测顺序
+
+脚本按以下顺序尝试，第一个通过哈希校验的即采用：
+
+| 顺序 | 源 | 实测耗时 |
+|---|---|---|
+| 1 | `raw.githubusercontent.com` | 0.23 s |
+| 2 | `github.com/.../raw/...` | 0.64 s |
+| 3 | `gcore.jsdelivr.net` | 0.57 s |
+
+（数据为 2026-10-20 国内电信环境单次 HEAD 测量，仅作参考。）
+
+三者返回的文件字节数一致，且都过 SHA-256 校验，所以顺序只影响速度、不影响安全。若全部失败，可用 `-Proxy` 追加自定义加速前缀，会先尝试「前缀 + 原地址」的组合。
 
 ### 6. 替换流程
 
