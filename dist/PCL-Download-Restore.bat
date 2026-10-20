@@ -63,7 +63,7 @@ exit /b 2
     还原：恢复最近一次备份的 exe，并移除 SystemSystemUpdate 限制。
 
 .PARAMETER Proxy
-    GitHub 加速前缀，例如 https://ghfast.top/
+    GitHub 加速前缀，例如 https://hk.gh-proxy.com/
     会拼成 <Proxy><原始URL>。因为做了哈希校验，用第三方代理也是安全的。
 
 .PARAMETER Force
@@ -72,7 +72,7 @@ exit /b 2
 .EXAMPLE
     .\Restore-PCLDownload.ps1
     .\Restore-PCLDownload.ps1 -PclDir "D:\PCL2"
-    .\Restore-PCLDownload.ps1 -Proxy "https://ghfast.top/"
+    .\Restore-PCLDownload.ps1 -Proxy "https://hk.gh-proxy.com/"
     .\Restore-PCLDownload.ps1 -Restore
 #>
 [CmdletBinding()]
@@ -181,7 +181,7 @@ function Get-PinnedZip {
             Write-Warn "失败：$($_.Exception.Message)"
         }
     }
-    throw "所有下载源均失败。可尝试用 -Proxy 指定加速前缀，例如 https://ghfast.top/"
+    throw "所有下载源均失败。可尝试用 -Proxy 指定加速前缀，例如 https://hk.gh-proxy.com/"
 }
 
 function Set-NoUpdate {
