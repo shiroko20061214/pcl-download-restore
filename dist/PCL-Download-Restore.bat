@@ -152,11 +152,35 @@ function Get-PinnedZip {
     param([string]$OutFile, [string]$ProxyPrefix)
 
     $enc  = [uri]::EscapeDataString('最新正式版.zip')
-    $urls = @(
-        "https://raw.githubusercontent.com/$Repo/$($Pin.Commit)/$enc"
-        "https://github.com/$Repo/raw/$($Pin.Commit)/$enc"
-        "https://gcore.jsdelivr.net/gh/$Repo@$($Pin.Commit)/$enc"
+
+    # ---- 下载源（2026-10-24 大陆直连实测排序）----
+    # github.com/<repo>/raw/... 只是 302 到 raw.githubusercontent.com，
+    # 而 raw.githubusercontent.com 与 github.com 在大陆常被阻断，
+    # 所以原来的前两个源在很多机器上必然失败。现改为：
+    #   1) jsDelivr 的国内可达镜像（实测 5~6 秒，字节与官方一致）
+    #   2) gcore.jsdelivr.net / gh-proxy 兜底
+    #   3) fork 兜底：fork 保留同一 commit 对象，上游被删/被封也能取到同一份文件
+    #   4) GitHub 原地址放最后（能翻墙的用户才用得上）
+    $mirror = @(
+        { param($r, $c, $e) "https://jsdelivr.b-cdn.net/gh/$r@$c/$e" }
+        { param($r, $c, $e) "https://cdn.jsdmirror.com/gh/$r@$c/$e" }
+        { param($r, $c, $e) "https://gcore.jsdelivr.net/gh/$r@$c/$e" }
+        { param($r, $c, $e) "https://hk.gh-proxy.com/https://raw.githubusercontent.com/$r/$c/$e" }
     )
+    $forkRepos = @('QingDongmen/PCLbk', 'jinfanhao1/PCL')
+
+    $m0 = $mirror[0]
+    $m1 = $mirror[1]
+    $urls = New-Object System.Collections.ArrayList
+    foreach ($m in $mirror) { [void]$urls.Add((& $m $Repo $Pin.Commit $enc)) }
+    foreach ($fr in $forkRepos) {
+        [void]$urls.Add((& $m0 $fr $Pin.Commit $enc))
+        [void]$urls.Add((& $m1 $fr $Pin.Commit $enc))
+    }
+    [void]$urls.Add("https://github.com/$Repo/raw/$($Pin.Commit)/$enc")
+    [void]$urls.Add("https://raw.githubusercontent.com/$Repo/$($Pin.Commit)/$enc")
+    $urls = @($urls)
+
     if ($ProxyPrefix) {
         $pre = $ProxyPrefix.TrimEnd('/') + '/'
         $urls = @($urls | ForEach-Object { $pre + $_ }) + $urls
@@ -181,7 +205,7 @@ function Get-PinnedZip {
             Write-Warn "失败：$($_.Exception.Message)"
         }
     }
-    throw "所有下载源均失败。可尝试用 -Proxy 指定加速前缀，例如 https://hk.gh-proxy.com/"
+    throw "所有下载源均失败（国内镜像与 GitHub 原地址都不可达）。请检查网络后重试；如仍失败，可用 -Proxy 指定加速前缀，例如 https://hk.gh-proxy.com/"
 }
 
 function Set-NoUpdate {
